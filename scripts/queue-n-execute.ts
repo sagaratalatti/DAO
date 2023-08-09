@@ -7,14 +7,12 @@ export async function queueAndExecute () {
     const args = [NEW_STORE_VALUE];
     const box = await ethers.getContract("Box");
     const encodedFunctionCall = box.interface.encodeFunctionData(STORE_FUNCTION, args);
-    const descriptionHash = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(PROPOSAL_DESCRIPTION);
-    );
+    const descriptionHash = ethers.hashMessage(ethers.id(PROPOSAL_DESCRIPTION));
 
     const governance = await ethers.getContract("GovernorContract");
     console.log("Queueing...");
-    const queueTx = await governance.queue(
-        [box.address],
+    const queueTx = await governance.getFunction("queue")(
+        [await box.getAddress()],
         [0],
         [encodedFunctionCall],
         descriptionHash
@@ -28,8 +26,8 @@ export async function queueAndExecute () {
     }
 
     console.log("Executing...");
-    const executeTx = await governance.execute(
-        [box.address],
+    const executeTx = await governance.getFunction("execute")(
+        [await box.getAddress()],
         [0],
         [encodedFunctionCall],
         descriptionHash
@@ -37,7 +35,7 @@ export async function queueAndExecute () {
 
     await executeTx.wait(1);
 
-    const boxNewValue = await box.retrieve();
+    const boxNewValue = await box.getFunction("retrieve");
     console.log(`New Box Value: ${boxNewValue.toString()}`);
 }
 

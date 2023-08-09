@@ -29,6 +29,8 @@
     "lint:fix": "solhint 'contracts/**/*.sol' --fix",
     "format": "yarn prettier --write .",
     "typechain": "yarn hardhat typechain",
-    "ci:clean": "rm -rf ./artifacts ./cache .;types"
+    "ci:clean": "rm -rf ./artifacts ./cache .;types",
+    "propose": "hardhat run scripts/propose.ts --network localhost",
+    "vote": "hardhat run scripts/vote.ts --network localhost"
   }
 }

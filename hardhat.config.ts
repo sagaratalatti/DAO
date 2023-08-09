@@ -3,7 +3,6 @@ import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-deploy";
 import "@nomiclabs/hardhat-ethers";
 import "@typechain/hardhat";
-import "@nomiclabs/hardhat-waffle";
 import "hardhat-gas-reporter";
 import "dotenv/config";
 import "solidity-coverage";

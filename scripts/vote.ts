@@ -1,31 +1,36 @@
-import * as fs from "fs";
-import { VOTING_PERIOD, developmentChains, proposalFile } from "../helper-hardhat-config";
-import { network, ethers } from "hardhat";
-import { moveBlocks } from "../utils/move-blocks";
+import * as fs from "fs"
+import { network, ethers } from "hardhat"
+import { proposalFile, developmentChains, VOTING_PERIOD } from "../helper-hardhat-config"
+import { moveBlocks } from "../utils/move-blocks"
 
-const index = 0;
 
-async function main(proposalIndex: number) {
-
-    const proposals = JSON.parse(fs.readFileSync(proposalFile, "utf8"));
-    const proposalId = proposals[network.config.chainId!][proposalIndex];
-    // 0 = Against, 1 = For, 2 = Abstain
-    const voteWay = 1;
-    const governance = await ethers.getContract("GovernorContract");
-    const reason = "I Like Mangoes";
-    const voteTxResponse = await governance.castVoteWithReason(proposalId, voteWay, reason);
-
-    await voteTxResponse.wait(1);
-    if (developmentChains.includes(network.name)) {
-        await moveBlocks(VOTING_PERIOD + 1);
-    }
-    
-    console.log("Voted! WAGMI!");
-
-    // const proposalState = await governance.state("Enter JSON hash");
+async function main() {
+  const proposals = JSON.parse(fs.readFileSync(proposalFile, "utf8"))
+  // Get the last proposal for the network. You could also change it for your index
+  const proposalId = proposals[network.config.chainId!].at(-1);
+  // 0 = Against, 1 = For, 2 = Abstain for this example
+  const voteWay = 1
+  const reason = "I lika do da cha cha"
+  await vote(proposalId, voteWay, reason)
 }
 
-main(index).then(() => process.exit(0)).catch((error) => {
-    console.error(error);
-    process.exit(1);
-});
+// 0 = Against, 1 = For, 2 = Abstain for this example
+export async function vote(proposalId: string, voteWay: number, reason: string) {
+  console.log("Voting...")
+  const governor = await ethers.getContract("GovernorContract")
+  const voteTx = await governor.getFunction("castVoteWithReason").call(proposalId, voteWay, reason)
+  const voteTxReceipt = await voteTx.wait(1)
+  console.log(voteTxReceipt.events[0].args.reason)
+  const proposalState = await governor.getFunction("state")(proposalId)
+  console.log(`Current Proposal State: ${proposalState}`)
+  if (developmentChains.includes(network.name)) {
+    await moveBlocks(VOTING_PERIOD + 1)
+  }
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
