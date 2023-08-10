@@ -24,7 +24,7 @@ const deployVault: DeployFunction = async function (hre: HardhatRuntimeEnvironme
     
     console.log(owners);
 
-     const vault = await deploy("MultisigVault", {
+     const vault = await deploy("Vault", {
         from: deployer,
         args: args,
         log: true,

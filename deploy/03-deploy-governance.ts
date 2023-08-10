@@ -9,9 +9,9 @@ const deployGovernance: DeployFunction = async function (hre: HardhatRuntimeEnvi
     const { deploy, log, get } = deployments;
     const { deployer } = await getNamedAccounts();
 
-    const governanceToken = await get("GovernanceToken");
+    const memeToken = await get("MemeToken");
     const timeLock = await get("TimeLock");
-    const args = [governanceToken.address, timeLock.address, VOTING_DELAY, VOTING_PERIOD, QUORUM_PERCENTAGE];
+    const args = [memeToken.address, timeLock.address, VOTING_DELAY, VOTING_PERIOD, QUORUM_PERCENTAGE];
 
     log("----------------------------------------------------")
     log("Deploying Governance Token...");

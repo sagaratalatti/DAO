@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-contract MultisigVault {
+contract Vault {
 
     event Deposit(address indexed sender, uint amount, uint balance);
     event SubmitTransaction(address indexed owner, uint indexed txIndex, address indexed to, uint value, bytes data);
     event ConfirmTransaction(address indexed owner, uint indexed txIndex);
     event RevokeConfirmation(address indexed owner, uint indexed txIndex);
     event ExecuteTransaction(address indexed owner, uint indexed txIndex);
-    event ApprovedTransaction(address indexed governanceContract, uint indexed txIndex);
+    event ApprovedTransaction(address indexed governanceAddress, uint indexed txIndex);
 
     address[] public owners;
     mapping(address => bool) public isOwner;
@@ -43,6 +43,11 @@ contract MultisigVault {
 
     modifier notApproved(uint _txIndex) {
         require(!transactions[_txIndex].daoApproval, "tx approved");
+        _;
+    }
+
+    modifier approvedTransaction(uint _txIndex) {
+        require(transactions[_txIndex].daoApproval, "tx not approved");
         _;
     }
 
@@ -81,9 +86,7 @@ contract MultisigVault {
         emit Deposit(msg.sender, msg.value, address(this).balance);
     }
 
-    function submitTransaction(address _to, uint _value, bytes memory _data) public onlyOwner {
-        
-        uint txIndex = transactions.length;
+    function submitTransaction(address _to, uint _txIndex, uint _value, bytes memory _data) public onlyOwner {
 
         transactions.push(Transaction({
             to: _to,
@@ -94,12 +97,12 @@ contract MultisigVault {
             numConfirmatons: 0
         }));
 
-        emit SubmitTransaction(msg.sender, txIndex, _to, _value, _data);
+        emit SubmitTransaction(msg.sender, _txIndex, _to, _value, _data);
     }
 
-    function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) notApproved(_txIndex) {
+    function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
         Transaction storage transaction = transactions[_txIndex];
-        require(transaction.daoApproval = true, "transaction not approved!");
+        require(transaction.daoApproval == true, "transaction not approved!");
         transaction.numConfirmatons += 1;
         isConfirmed[_txIndex][msg.sender] = true;
 
@@ -117,12 +120,13 @@ contract MultisigVault {
     function executeTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
         Transaction storage transaction = transactions[_txIndex];
         require(transaction.numConfirmatons >= numConfirmationsRequired, "cannot execute tx");
-        require(transaction.daoApproval = true, "transaction not approved by dao");
+        require(transaction.daoApproval == true, "transaction not approved by DAO");
 
         transaction.executed = true;
 
         (bool success, ) = transaction.to.call{value: transaction.value}(transaction.data);
         require(success, "tx failed");
+        transaction.daoApproval = false;
 
         emit ExecuteTransaction(msg.sender, _txIndex);
     }

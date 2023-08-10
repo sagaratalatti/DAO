@@ -8,13 +8,14 @@ const deployTimelock: DeployFunction = async function (hre: HardhatRuntimeEnviro
     const { getNamedAccounts, deployments, network } = hre;
     const { deploy, log } = deployments;
     const { deployer } = await getNamedAccounts();
+    const args = [MINIMUM_DELAY, [], [], deployer];
 
     log("----------------------------------------------------")
     log("Deploying Timelock contract...");
 
     const timeLock = await deploy("TimeLock", {
         from: deployer,
-        args: [MINIMUM_DELAY, [], [], deployer],
+        args: args,
         log: true,
         waitConfirmations: networkConfig[network.name].blockConfirmations || 1,
     });
@@ -22,7 +23,7 @@ const deployTimelock: DeployFunction = async function (hre: HardhatRuntimeEnviro
     log(`Deployed governance contract to address ${timeLock.address}`);
 
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
-        await verify(timeLock.address, []);
+        await verify(timeLock.address, args);
     }
 
 }

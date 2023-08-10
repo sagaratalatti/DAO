@@ -4,7 +4,7 @@ import { ethers } from "hardhat";
 import { developmentChains, networkConfig } from "../helper-hardhat-config";
 import verify from "../helper-functions";
 
-const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployMemeToken: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     
     const { getNamedAccounts, deployments, network } = hre;
     const { deploy, log } = deployments;
@@ -12,7 +12,7 @@ const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntim
 
     log("----------------------------------------------------")
     log("Deploying Governance Token...");
-    const governanceToken = await deploy("GovernanceToken", {
+    const memeToken = await deploy("MemeToken", {
         from: deployer,
         args: [],
         log: true,
@@ -21,25 +21,25 @@ const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntim
         
     });
 
-    log(`Deployed governance token to address ${governanceToken.address}`);
+    log(`Deployed governance token to address ${memeToken.address}`);
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
-        await verify(governanceToken.address, []);
+        await verify(memeToken.address, []);
     }
 
     log(`Delegating to ${deployer}`)
-    await delegate(governanceToken.address, deployer);
+    await delegate(memeToken.address, deployer);
     log("Deployer delegated"!)
 };
 
-const delegate = async (governanceTokenAddress: string, delegatedAccount: string) => {
-    const governanceToken = await ethers.getContractAt("GovernanceToken", governanceTokenAddress);
+const delegate = async (memeTokenAddress: string, delegatedAccount: string) => {
+    const memeToken = await ethers.getContractAt("MemeToken", memeTokenAddress);
     
-    const tx = await governanceToken.delegate(delegatedAccount);
+    const tx = await memeToken.delegate(delegatedAccount);
     await tx.wait(1);
-    console.log(`Checkpoints ${await governanceToken.numCheckpoints(delegatedAccount)}`);
+    console.log(`Checkpoints ${await memeToken.numCheckpoints(delegatedAccount)}`);
 
 
 }
 
-export default deployGovernanceToken;
-deployGovernanceToken.tags = ["all", "governance"]
+export default deployMemeToken;
+deployMemeToken.tags = ["all", "memetoken"]
