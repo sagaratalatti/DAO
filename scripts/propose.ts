@@ -27,16 +27,20 @@ export async function propose(args: any[], functionToCall: string, proposalDescr
   if (developmentChains.includes(network.name)) {
     await moveBlocks(VOTING_DELAY + 1)
   }
-  const proposeReceipt = await proposeTx.wait(1)
-  const proposalId = proposeReceipt.events[0].args.proposalId
+
+  const proposeReceipt = await proposeTx.wait(1);
+  const log = governor.interface.parseLog(proposeReceipt.logs[0]);
+  const proposalId = log?.args.proposalId;
+
+  console.log('transaction events', log)
   console.log(`Proposed with proposal ID:\n  ${proposalId}`)
 
-  const proposalState = await governor.getFunction("state").call(proposalId)
-  const proposalSnapShot = await governor.getFunction("proposalSnapshot").call(proposalId)
-  const proposalDeadline = await governor.getFunction("proposalDeadline").call(proposalId)
+  const proposalState = await governor.getFunction("state")(proposalId)
+  const proposalSnapShot = await governor.getFunction("proposalSnapshot")(proposalId)
+  const proposalDeadline = await governor.getFunction("proposalDeadline")(proposalId)
   // save the proposalId
-  storeProposalId(proposalId);
-
+  storeProposalId(proposalId); 
+  
   // the Proposal State is an enum data type, defined in the IGovernor contract.
   // 0:Pending, 1:Active, 2:Canceled, 3:Defeated, 4:Succeeded, 5:Queued, 6:Expired, 7:Executed
   console.log(`Current Proposal State: ${proposalState}`)

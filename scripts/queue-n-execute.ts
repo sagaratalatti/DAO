@@ -7,7 +7,10 @@ export async function queueAndExecute () {
     const args = [NEW_STORE_VALUE];
     const box = await ethers.getContract("Box");
     const encodedFunctionCall = box.interface.encodeFunctionData(STORE_FUNCTION, args);
-    const descriptionHash = ethers.hashMessage(ethers.id(PROPOSAL_DESCRIPTION));
+    const descriptionHash = ethers.hashMessage((PROPOSAL_DESCRIPTION));
+
+    console.log(`Proposal function call: ${encodedFunctionCall}`);
+    console.log(`Proposal description hash: ${descriptionHash}`);
 
     const governance = await ethers.getContract("GovernorContract");
     console.log("Queueing...");

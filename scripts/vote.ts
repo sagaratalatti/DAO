@@ -18,10 +18,13 @@ async function main() {
 export async function vote(proposalId: string, voteWay: number, reason: string) {
   console.log("Voting...")
   const governor = await ethers.getContract("GovernorContract")
-  const voteTx = await governor.getFunction("castVoteWithReason").call(proposalId, voteWay, reason)
+  const voteTx = await governor.getFunction("castVoteWithReason")(proposalId, voteWay, reason)
   const voteTxReceipt = await voteTx.wait(1)
-  console.log(voteTxReceipt.events[0].args.reason)
+  const log = governor.interface.parseLog(voteTxReceipt.logs[0]);
+  const reasonLog = log?.args.reason;
+  console.log(`Voting Reason: ${reasonLog}`);
   const proposalState = await governor.getFunction("state")(proposalId)
+
   console.log(`Current Proposal State: ${proposalState}`)
   if (developmentChains.includes(network.name)) {
     await moveBlocks(VOTING_PERIOD + 1)

@@ -49,7 +49,7 @@ contract MemeToken is Ownable, ERC20 {
         }
     }
 
-    function burn(uint256 value) external {
+    function burn(uint256 value) external onlyOwner {
         _burn(msg.sender, value);
     }
 }
