@@ -7,7 +7,7 @@ export async function queueAndExecute () {
     const args = [NEW_STORE_VALUE];
     const box = await ethers.getContract("Box");
     const encodedFunctionCall = box.interface.encodeFunctionData(STORE_FUNCTION, args);
-    const descriptionHash = ethers.hashMessage((PROPOSAL_DESCRIPTION));
+    const descriptionHash = ethers.id((PROPOSAL_DESCRIPTION));
 
     console.log(`Proposal function call: ${encodedFunctionCall}`);
     console.log(`Proposal description hash: ${descriptionHash}`);
@@ -38,7 +38,7 @@ export async function queueAndExecute () {
 
     await executeTx.wait(1);
 
-    const boxNewValue = await box.getFunction("retrieve");
+    const boxNewValue = await box.getFunction("retrieve").call(null);
     console.log(`New Box Value: ${boxNewValue.toString()}`);
 }
 
