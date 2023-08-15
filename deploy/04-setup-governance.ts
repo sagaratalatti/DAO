@@ -21,10 +21,13 @@ const setupGovernance: DeployFunction = async function (hre: HardhatRuntimeEnvir
 
     const proposerTx = await timeLock.getFunction("grantRole")(proposerRole, await governance.getAddress());
     await proposerTx.wait(1); // wait for 1 block confirmation
+    log(`${await governance.getAddress()} is Proposer`);
     const executorTx = await timeLock.getFunction("grantRole")(executorRole, ethers.ZeroAddress);
     await executorTx.wait(1); // wait for 1 block confirmation */
+    log(`${ethers.ZeroAddress} is Executor`)
     const revokeTx = await timeLock.getFunction("revokeRole")(adminRole, deployer);
     await revokeTx.wait(1); // wait for 1 block confirmation */
+    log(`${deployer} is no more and admin`)
 }
 
 export default setupGovernance;
