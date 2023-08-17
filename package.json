@@ -33,6 +33,7 @@
     "propose": "hardhat run scripts/propose.ts --network localhost",
     "vote": "hardhat run scripts/vote.ts --network localhost",
     "qne": "hardhat run scripts/queue-n-execute.ts --network localhost",
+    "encodedFunctions": "hardhat run scripts/encodedFunctions.ts --network localhost",
     "deploy:sepolia": "hardhat deploy --network sepolia"
   }
 }

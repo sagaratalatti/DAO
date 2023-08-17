@@ -24,7 +24,7 @@ const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntim
   }
   log(`Delegating to ${deployer}`)
   await delegate(governanceToken.address, deployer)
-  log("Delegated!")
+  log(`Delegated! to ${deployer}`)
 }
 
 const delegate = async (governanceTokenAddress: string, delegatedAccount: string) => {

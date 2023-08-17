@@ -7,7 +7,7 @@ import { moveBlocks } from "../utils/move-blocks"
 async function main() {
   const proposals = JSON.parse(fs.readFileSync(proposalFile, "utf8"))
   // Get the last proposal for the network. You could also change it for your index
-  const proposalId = proposals[network.config.chainId!].at(-1);
+  const proposalId = "1651198130471028976109111467856801098765282281128954988686930752887367508211";
   // 0 = Against, 1 = For, 2 = Abstain for this example
   const voteWay = 1
   const reason = "I lika do da cha cha"

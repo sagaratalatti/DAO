@@ -16,8 +16,9 @@ contract MemeToken is Ownable, ERC20 {
     uint256 public minHoldingAmount;
     address public sushiSwapV2Pair;
     mapping(address => bool) public blacklists;
+    uint256 _totalSupply = 120_000_000_000_000 * 10**18;
 
-    constructor(uint256 _totalSupply) ERC20("Meme", "MEME") {
+    constructor() ERC20("Meme", "MEME") {
         _mint(msg.sender, _totalSupply);
     }
 

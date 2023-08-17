@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-contract Vault {
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+
+contract Vault is AccessControl {
 
     event Deposit(address indexed sender, uint amount, uint balance);
     event SubmitTransaction(address indexed owner, uint indexed txIndex, address indexed to, uint value, bytes data);
@@ -10,16 +13,19 @@ contract Vault {
     event ExecuteTransaction(address indexed owner, uint indexed txIndex);
     event ApprovedTransaction(address indexed governanceAddress, uint indexed txIndex);
 
-    address[] public owners;
-    mapping(address => bool) public isOwner;
+    bytes32 public constant CUSTODIAN_ROLE = keccak256("VAULT_CUSTODIAN");
+    bytes32 public constant GOVERNANCE_ROLE = keccak256("VAULT_GOVERNANCE");
+
+    address[] public custodians;
+    
     uint public numConfirmationsRequired;
+    IERC20 public tokenAddress;
     address public governanceAddress;
 
     struct Transaction {
         address to;
         uint value;
         bytes data;
-        bool daoApproval;
         bool executed;
         uint numConfirmatons;
     }
@@ -31,8 +37,8 @@ contract Vault {
 
     Transaction[] public transactions;
 
-    modifier onlyOwner() {
-        require(isOwner[msg.sender], "not owner");
+    modifier onlyCustodian() {
+        require(hasRole(CUSTODIAN_ROLE, msg.sender), "not custodian");
         _;
     }
 
@@ -42,12 +48,12 @@ contract Vault {
     }
 
     modifier notApproved(uint _txIndex) {
-        require(!transactions[_txIndex].daoApproval, "tx approved");
+        require(!isApproved[_txIndex][governanceAddress], "tx approved by governance");
         _;
     }
 
     modifier approvedTransaction(uint _txIndex) {
-        require(transactions[_txIndex].daoApproval, "tx not approved");
+        require(isApproved[_txIndex][governanceAddress], "tx not approved");
         _;
     }
 
@@ -56,7 +62,7 @@ contract Vault {
         _;
     }
     modifier onlyGovernance() {
-        require(msg.sender == governanceAddress, "not governance contract");
+        require(hasRole(GOVERNANCE_ROLE, msg.sender), "not governance contract");
         _;
     }
     modifier notConfirmed(uint _txIndex) {
@@ -64,35 +70,37 @@ contract Vault {
         _;
     }
 
-    constructor(address[] memory _owners, uint _numConfirmationsRequired, address _governanceContract) {
-        require(_owners.length > 0, "owners required");
-        require(_numConfirmationsRequired > 0 && _numConfirmationsRequired <= _owners.length, "invalid number of required confirmations");
+    constructor(address _tokenAddress, address[] memory _custodians, uint _numConfirmationsRequired, address _governanceContract) {
+        require(_custodians.length > 0, "custodians required");
+        require(_numConfirmationsRequired > 0 && _numConfirmationsRequired <= _custodians.length, "invalid number of required confirmations");
+        require(_tokenAddress != address(0), "blackhole token address");
 
-        for (uint i = 0; i < _owners.length; i++) {
-            address owner = _owners[i];
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+
+        for (uint i = 0; i < _custodians.length; i++) {
+            address owner = _custodians[i];
 
             require(owner != address(0), "invalid owner");
-            require(!isOwner[owner], "owner not unique");
 
-            isOwner[owner] = true;
-            owners.push(owner);
+            grantRole(CUSTODIAN_ROLE, owner);
+            custodians.push(owner);
         }
-
         numConfirmationsRequired = _numConfirmationsRequired;
         governanceAddress = _governanceContract;
+        tokenAddress = IERC20(_tokenAddress);
     }
 
     receive() external payable {
         emit Deposit(msg.sender, msg.value, address(this).balance);
     }
 
-    function submitTransaction(address _to, uint _txIndex, uint _value, bytes memory _data) public onlyOwner {
+    function submitTransaction(address _to, uint _txIndex, uint _value, bytes memory _data) onlyCustodian public {
+        require(isApproved[_txIndex][governanceAddress], "transaction not approved by governance");
 
         transactions.push(Transaction({
             to: _to,
             value: _value,
             data: _data,
-            daoApproval: true,
             executed: false,
             numConfirmatons: 0
         }));
@@ -100,42 +108,42 @@ contract Vault {
         emit SubmitTransaction(msg.sender, _txIndex, _to, _value, _data);
     }
 
-    function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
+    function confirmTransaction(uint _txIndex) public onlyCustodian txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
+        require(isApproved[_txIndex][governanceAddress], "transaction not approved by governance");
+
         Transaction storage transaction = transactions[_txIndex];
-        require(transaction.daoApproval == true, "transaction not approved!");
         transaction.numConfirmatons += 1;
         isConfirmed[_txIndex][msg.sender] = true;
 
         emit ConfirmTransaction(msg.sender, _txIndex);
     }
 
-    function approveTransaction(uint _txIndex) public onlyGovernance() txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) notApproved(_txIndex) {
-        Transaction storage transaction = transactions[_txIndex];
-        transaction.daoApproval = true;
+    function approveTransaction(uint _txIndex) public onlyGovernance()  notApproved(_txIndex) {
         isApproved[_txIndex][msg.sender] = true;
-
         emit ApprovedTransaction(msg.sender, _txIndex);
     }
 
-    function executeTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
+    function executeTransaction(uint _txIndex) public onlyCustodian txExists(_txIndex) notExecuted(_txIndex) {
         Transaction storage transaction = transactions[_txIndex];
         require(transaction.numConfirmatons >= numConfirmationsRequired, "cannot execute tx");
-        require(transaction.daoApproval == true, "transaction not approved by DAO");
-
+        require(isApproved[_txIndex][governanceAddress], "transaction not approved by DAO");
+        require(transaction.value <= tokenAddress.balanceOf(address(this)), "amount execceds the available balance");
+        
         transaction.executed = true;
 
-        (bool success, ) = transaction.to.call{value: transaction.value}(transaction.data);
+        bool success = tokenAddress.transfer(transaction.to, transaction.value);
         require(success, "tx failed");
-        transaction.daoApproval = false;
+
+        isApproved[_txIndex][governanceAddress] = false;
 
         emit ExecuteTransaction(msg.sender, _txIndex);
     }
 
-    function revokeConfimration(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
-        Transaction storage transaction = transactions[_txIndex];
-
+    function revokeConfimration(uint _txIndex) public onlyCustodian txExists(_txIndex) notExecuted(_txIndex) {
         require(isConfirmed[_txIndex][msg.sender], "tx not confirmed");
         require(isApproved[_txIndex][governanceAddress], "transaction not approved");
+
+        Transaction storage transaction = transactions[_txIndex];
 
         transaction.numConfirmatons -= 1;
         isConfirmed[_txIndex][msg.sender] = false;
@@ -143,8 +151,8 @@ contract Vault {
         emit RevokeConfirmation(msg.sender, _txIndex);
     }
 
-    function getOwners() public view returns (address[] memory) {
-        return owners;
+    function getCustodians() public view returns (address[] memory) {
+        return custodians;
     }
 
     function getTransactonCount() public view returns (uint) {

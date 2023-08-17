@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { networkConfig, VOTING_DELAY, VOTING_PERIOD, QUORUM_PERCENTAGE, developmentChains } from "../helper-hardhat-config";
+import { networkConfig, VOTING_DELAY, VOTING_PERIOD, QUORUM_PERCENTAGE, developmentChains, HH_ADDRESS_1, HH_ADDRESS_2 } from "../helper-hardhat-config";
 import verify from "../helper-functions";
 import { ethers } from "hardhat";
 
@@ -11,17 +11,19 @@ const deployVault: DeployFunction = async function (hre: HardhatRuntimeEnvironme
     const { deployer } = await getNamedAccounts()
    
     const governance = await ethers.getContract("GovernorContract", deployer);
+    const governanceToken = await ethers.getContract("GovernanceToken", deployer);
     const governanceAddress = await governance.getAddress()
+    const tokenAddress = await governanceToken.getAddress();
 
-    const owners = [deployer, governanceAddress];
+    const owners = [deployer, HH_ADDRESS_1, HH_ADDRESS_2];
 
-    const args = [owners, 1 , governanceAddress];
+    const args = [tokenAddress, owners, 2 , governanceAddress];
 
     log("----------------------------------------------------")
     log("Deploying Vault Contract..."); 
     console.log(`deployer: ${deployer}`)
     console.log(`Governor: ${governanceAddress}`)
-    
+
     console.log(owners);
 
      const vault = await deploy("Vault", {
