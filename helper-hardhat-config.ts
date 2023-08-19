@@ -27,7 +27,7 @@ export const RUTURAJ_ADDRESS = "0xe83dD509245EA4920c910b3D61f32582744f6d2F"
 export const HH_ADDRESS_1 = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
 export const HH_ADDRESS_2 = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
 
-export const PROPOSAL_DESCRIPTION = "This proposal shall execute the box store function to save the uint256 passed through proposal";
+export const PROPOSAL_DESCRIPTION = "Trying the first governance box execution";
 
 export const developmentChains = ["hardhat", "localhost"];
 export const proposalFile = "proposals.json";

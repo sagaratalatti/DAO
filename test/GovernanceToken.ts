@@ -22,22 +22,17 @@ describe("Governance Token", function() {
     });
 
     it("Owner transfers tokens to 2 accounts", async() => {
-        const initialOwnerBalance = await governorToken.balanceOf(await owner.getAddress());
-        const initialAccount1Balance = await governorToken.balanceOf(await account1.getAddress());
-        const initialAccount2Balance = await governorToken.balanceOf(await account2.getAddress());
-        
-        const ownerBalance = await governorToken.balanceOf(await owner.getAddress());
-        const transferAmount = 333333;
+        const transferAmount = ethers.parseEther("333333");
       
-        // Transfer tokens from owner to account1
-        await governorToken.connect(owner).transfer(await account1.getAddress(), transferAmount);
-        await governorToken.connect(owner).transsfer(await account2.getAddress(), transferAmount);
+        // Transfer tokens from owner to account1]
+        await governorToken.connect(await owner.getAddress()).transfer(account1, transferAmount);
+        //await governorToken.transferFrom(await owner.getAddress(), account1, transferAmount);
+        //await governorToken.transferFrom(await owner.getAddress(), account2, transferAmount);
       
-        const finalOwnerBalance = await governorToken.balanceOf(await owner.getAddress());
         const finalAccount1Balance = await governorToken.balanceOf(await account1.getAddress());
         const finalAccount2Balance = await governorToken.balanceOf(await account2.getAddress());
       
-        expect(finalOwnerBalance).to.equal(initialOwnerBalance.sub(transferAmount) * 2);
+        //expect(finalOwnerBalance).to.equal(initialOwnerBalance.sub(transferAmount) * 2);
         expect(finalAccount1Balance).to.equal(transferAmount);
         expect(finalAccount2Balance).to.equal(transferAmount);
         

@@ -96,7 +96,7 @@ contract Vault is AccessControl {
 
     function submitTransaction(address _to, uint _txIndex, uint _value, bytes memory _data) onlyCustodian public {
         require(isApproved[_txIndex][governanceAddress], "transaction not approved by governance");
-
+        
         transactions.push(Transaction({
             to: _to,
             value: _value,
